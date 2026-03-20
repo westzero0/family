@@ -4,11 +4,92 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, Users, Calendar as CalendarIcon, Sparkles, Loader2 } from 'lucide-react';
 
 export default function FamilyApp() {
-  const [view, setView] = useState<'profile' | 'calendar'>('profile');
   const [members, setMembers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFortuneModalOpen, setIsFortuneModalOpen] = useState(false); // 운세 모달
+  const [currentFortune, setCurrentFortune] = useState(""); // 운세 내용
+  const [loadingFortune, setLoadingFortune] = useState(false); // 로딩 상태
 
+  const fetchData = async () => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_GAS_URL}?t=${Date.now()}`);
+    const data = await res.json();
+    setMembers(data.members || []);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  // --- 운세 가져오기 함수 ---
+  const getFortune = async (member: any) => {
+    setLoadingFortune(true);
+    setIsFortuneModalOpen(true);
+    setCurrentFortune("명리학자 제미니가 별자리를 읽는 중입니다...");
+
+    try {
+      const res = await fetch('/api/fortune', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(member),
+      });
+      const data = await res.json();
+      setCurrentFortune(data.text);
+    } catch (e) {
+      setCurrentFortune("운세를 읽어오지 못했습니다. API 키 설정을 확인해주세요.");
+    } finally {
+      setLoadingFortune(false);
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto bg-gray-50 min-h-screen pb-20 p-4">
+      <h2 className="font-bold text-xl mb-4">가족 명단</h2>
+      <div className="space-y-4">
+        {members.map((m: any, idx) => (
+          <div key={idx} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex justify-between items-center">
+            <div>
+              <p className="font-bold text-lg">{m.name}</p>
+              <p className="text-xs text-gray-400">{m.birthday} ({m.isLunar})</p>
+            </div>
+            
+            {/* --- 수정된 버튼: onClick 추가 --- */}
+            <button 
+              onClick={() => getFortune(m)}
+              className="bg-purple-100 text-purple-600 p-3 rounded-2xl active:scale-90 transition-transform"
+            >
+              <Sparkles size={20} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* --- 운세 결과 팝업 --- */}
+      {isFortuneModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-6">
+          <div className="bg-white w-full rounded-[32px] p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setIsFortuneModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400"
+            ><X /></button>
+            
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                {loadingFortune ? <Loader2 className="animate-spin text-purple-600" size={32} /> : <Sparkles className="text-purple-600" size={32} />}
+              </div>
+              <h3 className="text-xl font-bold mb-4 text-gray-800">오늘의 운세</h3>
+              <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+                {currentFortune}
+              </p>
+              {!loadingFortune && (
+                <button 
+                  onClick={() => setIsFortuneModalOpen(false)}
+                  className="mt-8 w-full bg-gray-900 text-white py-4 rounded-2xl font-bold"
+                >확인</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      
   // 입력 폼 상태 (양/음력 추가)
   const [formData, setFormData] = useState({
     name: '',
