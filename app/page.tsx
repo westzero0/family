@@ -18,16 +18,18 @@ export default function FamilyApp() {
     mbti: '',
     hobby: ''
   });
-
-  const fetchData = async () => {
-    try {
-      const res = await fetch(process.env.NEXT_PUBLIC_GAS_URL!);
-      const data = await res.json();
-      setMembers(data.members || []);
-    } catch (e) {
-      console.error("데이터 로드 실패:", e);
-    }
-  };
+  
+const fetchData = async () => {
+  try {
+    // 캐시 때문에 옛날 데이터를 가져올 수 있으니 시간값을 살짝 붙여줍니다.
+    const res = await fetch(`${process.env.NEXT_PUBLIC_GAS_URL}?t=${Date.now()}`);
+    const data = await res.json();
+    console.log("불러온 데이터:", data); // 브라우저 F12 콘솔에서 확인용
+    setMembers(data.members || []);
+  } catch (e) {
+    console.error("데이터 로드 실패", e);
+  }
+};
 
   useEffect(() => { fetchData(); }, []);
 
