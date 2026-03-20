@@ -1,4 +1,5 @@
-import "./globals.css"; // CSS 파일이 없다면 이 줄은 지우셔도 됩니다.
+// app/layout.tsx
+import "./globals.css"; // 이 줄이 반드시 맨 위에 있어야 합니다!
 
 export default function RootLayout({
   children,
@@ -7,7 +8,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
